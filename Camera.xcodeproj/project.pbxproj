@@ -158,7 +158,7 @@
 				TargetAttributes = {
 					65C0E0411EF3B68E00FBA1B3 = {
 						CreatedOnToolsVersion = 8.3.3;
-						DevelopmentTeam = Q22HAPG7X2;
+						DevelopmentTeam = W4G6PH95W2;
 						LastSwiftMigration = 1100;
 						ProvisioningStyle = Automatic;
 					};
@@ -375,7 +375,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				DEVELOPMENT_TEAM = Q22HAPG7X2;
+				DEVELOPMENT_TEAM = W4G6PH95W2;
 				INFOPLIST_FILE = Camera/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.rizwankce.Camera311;
@@ -389,7 +389,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				DEVELOPMENT_TEAM = Q22HAPG7X2;
+				DEVELOPMENT_TEAM = W4G6PH95W2;
 				INFOPLIST_FILE = Camera/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.rizwankce.Camera311;

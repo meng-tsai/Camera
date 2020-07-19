@@ -8,18 +8,36 @@
 
 import UIKit
 import AVFoundation
+import CoreMotion
+import Foundation
 
 class ViewController: UIViewController {
 
     @IBOutlet weak var previewView: UIView!
     @IBOutlet weak var captureButton: UIButton!
     @IBOutlet weak var messageLabel: UILabel!
-    @IBOutlet weak var lable: UILabel!
+    @IBOutlet weak var outputButton: UIButton!
+    @IBAction func outputButton(_ sender: Any) {
+        exportRot()
+    }
     
     var captureSession: AVCaptureSession?
     var videoPreviewLayer: AVCaptureVideoPreviewLayer?
     var capturePhotoOutput: AVCapturePhotoOutput?
     var qrCodeFrameView: UIView?
+    let motionManager = CMMotionManager()
+    
+    var roll: Double = 0.0
+    var pitch: Double = 0.0
+    var yaw: Double = 0.0
+    var rotX: Double = 0.0
+    var rotY: Double = 0.0
+    var rotZ: Double = 0.0
+    
+    var rollArr = [Double]()
+    var pitchArr = [Double]()
+    var yawArr = [Double]()
+    
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -29,8 +47,10 @@ class ViewController: UIViewController {
         
         // Get an instance of the AVCaptureDevice class to initialize a device object and provide the video as the media type parameter
         guard let captureDevice = AVCaptureDevice.default(for: AVMediaType.video) else {
-            fatalError("No video device found")
+            print("No video device found")
+            return
         }
+
         
         do {
             // Get an instance of the AVCaptureDeviceInput class using the previous deivce object
@@ -66,7 +86,7 @@ class ViewController: UIViewController {
             //start video capture
             captureSession?.startRunning()
             
-            messageLabel.isHidden = true
+//            messageLabel.isHidden = true
             
             //Initialize QR Code Frame to highlight the QR code
             qrCodeFrameView = UIView()
@@ -83,8 +103,72 @@ class ViewController: UIViewController {
             return
         }
     
-    }
+        motionManager.gyroUpdateInterval = 0.2
 
+        motionManager.startGyroUpdates(to: OperationQueue.current!, withHandler: { (gyroData: CMGyroData?, NSError) -> Void in
+            self.outputRotData(gyroData!.rotationRate)
+            
+            if (NSError != nil){
+                print("\(NSError)")
+            }
+        })
+
+        motionManager.startDeviceMotionUpdates(to: OperationQueue.current!, withHandler: {(motionData: CMDeviceMotion?, NSError) -> Void in self.outputRPY(data: motionData!)
+            if (NSError != nil){
+                print("\(NSError)")
+            }
+        })
+
+    }
+    
+    func outputRPY(data: CMDeviceMotion){
+            let rpyattitude = motionManager.deviceMotion!.attitude
+        roll  = rpyattitude.roll * (180.0 / M_PI)
+        pitch   = rpyattitude.pitch * (180.0 / M_PI)
+        yaw    = rpyattitude.yaw * (180.0 / M_PI)
+    }
+    
+    func getRot(){
+        messageLabel.text = "roll = \(roll), pitch = \(pitch), yaw = \(yaw)"
+        rollArr.append(roll)
+        pitchArr.append(pitch)
+        yawArr.append(yaw)
+    }
+    
+    func outputRotData(_ rotation: CMRotationRate){
+        rotX = rotation.x
+        rotY = rotation.y
+        rotZ = rotation.z
+    }
+    
+    func getDocumentsDirectory() throws -> URL {
+         return try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+    }
+    
+    func exportRot(){
+        let metadata: [String: [Double]] = [
+            "roll": rollArr,
+            "pitch": pitchArr,
+            "yaw": yawArr
+        ]
+        
+        // Serialize to JSON
+        //guard let jsonData = try? JSONSerialization.data(withJSONObject: metadata) else{return}
+            // Convert to a string and print
+        //guard let JSONString = String(data: jsonData, encoding: String.Encoding.utf8) else{return}
+        //print(JSONString)
+        guard let pathDirectory = try? getDocumentsDirectory() else{return}
+        try? FileManager().createDirectory(at: pathDirectory, withIntermediateDirectories: true)
+        let filePath = pathDirectory.appendingPathComponent("Rotation\(Date()).json")
+        print(filePath)
+        let json = try? JSONEncoder().encode(metadata)
+        do {
+             try json!.write(to: filePath)
+        } catch {
+            print("Failed to write JSON data: \(error.localizedDescription)")
+        }
+    }
+    
     override func viewDidLayoutSubviews() {
         videoPreviewLayer?.frame = view.bounds
         if let previewLayer = videoPreviewLayer ,(previewLayer.connection?.isVideoOrientationSupported)! {
@@ -111,6 +195,7 @@ class ViewController: UIViewController {
         
         // Call capturePhoto method by passing our photo settings and a delegate implementing AVCapturePhotoCaptureDelegate
         capturePhotoOutput.capturePhoto(with: photoSettings, delegate: self)
+        getRot()
     }
 }
 
@@ -149,7 +234,7 @@ extension ViewController : AVCaptureMetadataOutputObjectsDelegate {
         // Check if the metadataObjects array is contains at least one object.
         if metadataObjects.count == 0 {
             qrCodeFrameView?.frame = CGRect.zero
-            messageLabel.isHidden = true
+//            messageLabel.isHidden = true
             return
         }
         
@@ -162,7 +247,7 @@ extension ViewController : AVCaptureMetadataOutputObjectsDelegate {
             qrCodeFrameView?.frame = barCodeObject!.bounds
             
             if metadataObj.stringValue != nil {
-                messageLabel.isHidden = false
+//                messageLabel.isHidden = false
                 messageLabel.text = metadataObj.stringValue
             }
         }
