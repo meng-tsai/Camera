@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="16097.2" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+    <device id="retina5_9" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--View Controller-->
+        <scene sceneID="tne-QT-ifu">
+            <objects>
+                <viewController id="BYZ-38-t0r" customClass="ViewController" customModule="DepthApp" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="812"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="W9r-8b-iys">
+                                <rect key="frame" x="16" y="54" width="343" height="662"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </view>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="naF-Z6-ciE">
+                                <rect key="frame" x="150" y="641" width="75" height="75"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" constant="75" id="TrQ-s4-Uqo"/>
+                                    <constraint firstAttribute="width" secondItem="naF-Z6-ciE" secondAttribute="height" multiplier="1:1" id="e2J-FO-nz2"/>
+                                </constraints>
+                                <color key="tintColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <state key="normal" title="Click"/>
+                                <connections>
+                                    <action selector="takePhoto:" destination="BYZ-38-t0r" eventType="touchDown" id="And-sX-e0k"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ujK-qE-aeG">
+                                <rect key="frame" x="62" y="748" width="34" height="30"/>
+                                <state key="normal" title="Start"/>
+                                <connections>
+                                    <action selector="startPressed:" destination="BYZ-38-t0r" eventType="touchUpInside" id="40o-DM-MaG"/>
+                                </connections>
+                            </button>
+                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="z5q-u8-cBL">
+                                <rect key="frame" x="141" y="748" width="32" height="30"/>
+                                <state key="normal" title="Stop"/>
+                                <connections>
+                                    <action selector="stopPressed:" destination="BYZ-38-t0r" eventType="touchUpInside" id="cz3-Pc-DDU"/>
+                                </connections>
+                            </button>
+                        </subviews>
+                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <constraints>
+                            <constraint firstItem="z5q-u8-cBL" firstAttribute="top" secondItem="naF-Z6-ciE" secondAttribute="bottom" constant="32" id="0og-sw-tHV"/>
+                            <constraint firstItem="ujK-qE-aeG" firstAttribute="top" secondItem="W9r-8b-iys" secondAttribute="bottom" constant="32" id="2qb-OH-GOA"/>
+                            <constraint firstItem="W9r-8b-iys" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="10" id="AUb-qx-5Jl"/>
+                            <constraint firstItem="naF-Z6-ciE" firstAttribute="bottom" secondItem="W9r-8b-iys" secondAttribute="bottom" id="Dwp-BM-xcg"/>
+                            <constraint firstItem="ujK-qE-aeG" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" constant="62" id="Jq6-1T-Mun"/>
+                            <constraint firstItem="W9r-8b-iys" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leadingMargin" id="UIh-jK-35g"/>
+                            <constraint firstItem="naF-Z6-ciE" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="597" id="aqL-m6-A0I"/>
+                            <constraint firstItem="naF-Z6-ciE" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="g1X-kv-S1T"/>
+                            <constraint firstItem="z5q-u8-cBL" firstAttribute="leading" secondItem="ujK-qE-aeG" secondAttribute="trailing" constant="45" id="vS4-1d-Nya"/>
+                            <constraint firstItem="naF-Z6-ciE" firstAttribute="centerX" secondItem="W9r-8b-iys" secondAttribute="centerX" id="yUV-1c-s3u"/>
+                        </constraints>
+                        <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
+                    </view>
+                    <connections>
+                        <outlet property="cameraView" destination="W9r-8b-iys" id="ipe-o3-puU"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="136.80000000000001" y="133.00492610837438"/>
+        </scene>
+    </scenes>
+</document>

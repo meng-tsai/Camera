@@ -40,11 +40,11 @@ class ViewController: UIViewController {
         // Get an instance of the AVCaptureDevice class to initialize a device object and provide the video as the media type parameter
         
         if #available(iOS 13.0, *){
-            guard let captureDevice = AVCaptureDevice.default(.builtInTrueDepthCamera, for: .video, position: .unspecified) else {
+            guard let captureDevice = AVCaptureDevice.default(.builtInDualCamera, for: .video, position: .back) else {
                 fatalError("No video device found")
             }
         }else{
-            guard let captureDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .unspecified) else {
+            guard let captureDevice = AVCaptureDevice.default(.builtInTelephotoCamera, for: .video, position: .unspecified) else {
                 fatalError("No video device found")
             }
         }
