@@ -131,6 +131,8 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, AV
     
     @IBAction func takePhoto(_ sender: Any) {
         let capturePhotoOutput = self.sessionOutput
+        capturePhotoOutput.isHighResolutionCaptureEnabled = true
+        capturePhotoOutput.isDualCameraDualPhotoDeliveryEnabled = true
         
         // Get an instance of AVCapturePhotoSettings class
         let photoSettings = AVCapturePhotoSettings()
@@ -155,6 +157,14 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, AV
             print("Fail to get photo.depthData")
             return
         }
+        
+        let photoData = photo.fileDataRepresentation();
+        let image=UIImage.init(data: photoData!)
+        
+        let path: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+        let url = URL(fileURLWithPath: path).appendingPathComponent("Photo.png")
+        try! image!.pngData()?.write(to: url, options: .atomic)
+        
         let depthData = photoDepthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32)
         let depthDataMap = depthData.depthDataMap //AVDepthData -> CVPixelBuffer
 
@@ -199,7 +209,6 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, AV
         // Accessible values : (width-1) * (height-1) = 767 * 575
 
         //let distanceAtXYPoint = floatBuffer[Int(x * y)]
-
     }
     
     func readBuffer(pixelBuffer:CVPixelBuffer) -> NSData{
