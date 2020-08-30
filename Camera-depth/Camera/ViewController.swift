@@ -38,16 +38,18 @@ class ViewController: UIViewController {
         captureButton.clipsToBounds = true
         
         // Get an instance of the AVCaptureDevice class to initialize a device object and provide the video as the media type parameter
-        
-        if #available(iOS 13.0, *){
-            guard let captureDevice = AVCaptureDevice.default(.builtInDualCamera, for: .video, position: .back) else {
-                fatalError("No video device found")
-            }
-        }else{
-            guard let captureDevice = AVCaptureDevice.default(.builtInTelephotoCamera, for: .video, position: .unspecified) else {
-                fatalError("No video device found")
-            }
+        guard let captureDevice = AVCaptureDevice.default(.builtInDualCamera, for: .video, position: .back) else {
+            fatalError("No video device found")
         }
+//        if #available(iOS 13.0, *){
+//            guard let captureDevice = AVCaptureDevice.default(.builtInDualCamera, for: .video, position: .back) else {
+//                fatalError("No video device found")
+//            }
+//        }else{
+//            guard let captureDevice = AVCaptureDevice.default(.builtInTelephotoCamera, for: .video, position: .unspecified) else {
+//                fatalError("No video device found")
+//            }
+//        }
 
         
         do {
@@ -195,8 +197,10 @@ extension ViewController : AVCapturePhotoCaptureDelegate {
 //            UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
 //        }
 //    }
-    @available(iOS 11.0, *)
+    //@available(iOS 11.0, *)
+    
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+        print("isCameraCalibrationDataDeliverySupported: \(output.isCameraCalibrationDataDeliverySupported)")
         guard let imageData = photo.fileDataRepresentation() else {
             fatalError("imageData No available")
         }

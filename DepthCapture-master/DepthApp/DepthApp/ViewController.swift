@@ -9,6 +9,16 @@
 import UIKit
 import AVFoundation
 
+extension UIImage {
+    func resized(toWidth width: CGFloat) -> UIImage? {
+        let canvasSize = CGSize(width: width, height: CGFloat(ceil(width/size.width * size.height)))
+        UIGraphicsBeginImageContextWithOptions(canvasSize, false, scale)
+        defer { UIGraphicsEndImageContext() }
+        draw(in: CGRect(origin: .zero, size: canvasSize))
+        return UIGraphicsGetImageFromCurrentImageContext()
+    }
+}
+
 class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, AVCaptureDepthDataOutputDelegate, AVCapturePhotoCaptureDelegate{
     func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
     }
@@ -19,6 +29,10 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, AV
     var previewLayer = AVCaptureVideoPreviewLayer()
     let dataOutputQueue = DispatchQueue(label: "data queue", qos: .userInitiated, attributes: [], autoreleaseFrequency: .workItem)
     var isRecording = false
+    var picNum = 0000001
+    var focused = false
+    var recording = false
+    var timer: Timer?
     
     private let depthDataOutput = AVCaptureDepthDataOutput()
     //private let dataOutputQueue = DispatchQueue(label: "dataOutputQueue")
@@ -35,7 +49,16 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, AV
             do {
                 
                 let input = try AVCaptureDeviceInput(device: device )
-                
+//                if (!focused){
+//                    self.setNeedsFocusUpdate()
+//                    self.updateFocusIfNeeded()
+//                    focused = true
+//                }
+                try device.lockForConfiguration()
+                device.focusMode = .autoFocus
+                device.focusPointOfInterest = CGPoint(x:0.5, y:0.5)
+                device.focusMode = .locked
+                device.unlockForConfiguration()
                 if captureSession.canAddInput(input){
                     captureSession.sessionPreset = AVCaptureSession.Preset.photo
                     captureSession.addInput(input)
@@ -59,6 +82,10 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, AV
                     
                     if let connection = depthDataOutput.connection(with: .depthData) {
                         connection.isEnabled = true
+                        if connection.isCameraIntrinsicMatrixDeliverySupported{
+                            connection.isCameraIntrinsicMatrixDeliveryEnabled = true;
+                            print("intrinsic matrix enabled")
+                        }
                         depthDataOutput.isFilteringEnabled = false
                         depthDataOutput.setDelegate(self, callbackQueue: dataOutputQueue)
                     } else {
@@ -66,7 +93,6 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, AV
                     }
                     
                     depthCapture.prepareForRecording()
-                    
                     // TODO: Do we need to synchronize the video and depth outputs?
                     //outputSynchronizer = AVCaptureDataOutputSynchronizer(dataOutputs: [sessionOutput, depthDataOutput])
 //                    if sessionOutput.isDepthDataDeliverySupported {
@@ -82,7 +108,6 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, AV
 
                     captureSession.startRunning()
                 }
-                
             } catch {
                 print("Error")
             }
@@ -130,9 +155,28 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, AV
     }
     
     @IBAction func takePhoto(_ sender: Any) {
+        print("button pressed")
+        if let timer = self.timer{
+            print("timer to nil")
+            self.timer!.invalidate()
+            self.timer = nil
+        }
+        else{
+//            DispatchQueue.main.async {
+//                self.timer = Timer(timeInterval: 0.5, repeats: true, block: { (_) in
+//                    print("photo saved")
+//                    self.savePhoto()
+//                })
+//            }
+            self.timer = Timer.scheduledTimer(timeInterval: 0.25, target: self, selector: #selector(savePhoto), userInfo: nil, repeats: true)
+        }
+    }
+    @objc func savePhoto(){
+        print("photo saved")
         let capturePhotoOutput = self.sessionOutput
         capturePhotoOutput.isHighResolutionCaptureEnabled = true
         capturePhotoOutput.isDualCameraDualPhotoDeliveryEnabled = true
+        
         
         // Get an instance of AVCapturePhotoSettings class
         let photoSettings = AVCapturePhotoSettings()
@@ -149,25 +193,55 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, AV
     func getDocumentsDirectory() throws -> URL {
          return try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
     }
-
+    
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-
+        //print("isCameraCalibrationDataDeliverySupported: \(output.isCameraCalibrationDataDeliverySupported)")
+        
         //## Convert Disparity to Depth ##
         guard let photoDepthData = photo.depthData else {
             print("Fail to get photo.depthData")
             return
         }
-        
         let photoData = photo.fileDataRepresentation();
-        let image=UIImage.init(data: photoData!)
         
+        print (photoDepthData.cameraCalibrationData?.intrinsicMatrix)
+        
+        let image=UIImage.init(data: photoData!)
+        guard let pathDirectory = try? getDocumentsDirectory() else{return}
         let path: String = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
-        let url = URL(fileURLWithPath: path).appendingPathComponent("Photo.png")
-        try! image!.pngData()?.write(to: url, options: .atomic)
+        
+        //print intrinsic matrix
+        
+        let intrinsic = photo.cameraCalibrationData?.intrinsicMatrix
+        var intrinsicDict = ["intrinsic":intrinsic]
+        var intrinsicPath = URL(fileURLWithPath: path + "/intrinsic/")
+        try? FileManager().createDirectory(at: intrinsicPath, withIntermediateDirectories: true)
+        intrinsicPath = intrinsicPath.appendingPathComponent("intrinsic\(picNum).json")
+        
+        if JSONSerialization.isValidJSONObject(intrinsicDict) { // True
+            do {
+                let rawData = try JSONSerialization.data(withJSONObject: intrinsicDict, options: .prettyPrinted)
+                try rawData.write(to: intrinsicPath, options: .atomic)
+            } catch {
+                print("Error: \(error)")
+            }
+        }
+        else{
+            print("Not Valid JSON")
+        }
+        
+        //print(photoData)
+        
+        
+        var imgPath = URL(fileURLWithPath: path+"/image/")
+        try? FileManager().createDirectory(at: imgPath, withIntermediateDirectories: true)
+        imgPath = imgPath.appendingPathComponent("image\(picNum).png")
+        try! image!.resized(toWidth: 576)!.pngData()?.write(to: imgPath, options: .atomic)
+        //try! image!.pngData()?.write(to: imgPath, options: .atomic)
         
         let depthData = photoDepthData.converting(toDepthDataType: kCVPixelFormatType_DepthFloat32)
         let depthDataMap = depthData.depthDataMap //AVDepthData -> CVPixelBuffer
-
+        //depthData.cameraCalibrationData?.intrinsicMatrix
         //## Data Analysis ##
 
         // Useful data
@@ -177,27 +251,35 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, AV
         print("w = \(width) depth = \(height)")
         //CVPixelBufferLockBaseAddress(depthDataMap, CVPixelBufferLockFlags(rawValue: 0))
         let data = readBuffer(pixelBuffer: depthDataMap)
+        
+        //pixelBuffer to UIImage to png
+        let toCIImage = CoreImage.CIImage.init(cvImageBuffer: depthDataMap)
+        let toUIImage = UIImage.init(ciImage: toCIImage)
+        var depthPath =  URL(fileURLWithPath: path+"/depth/")
+        try? FileManager().createDirectory(at: depthPath, withIntermediateDirectories: true)
+        depthPath = depthPath.appendingPathComponent("depth\(picNum).png")
+        try? toUIImage.pngData()?.write(to: depthPath)
+        
+        
         // Convert the base address to a safe pointer of the appropriate type
         let floatBuffer = unsafeBitCast(CVPixelBufferGetBaseAddress(depthDataMap), to: UnsafeMutablePointer<Float32>.self)
 
-        print(data)
         var arr2 = Array<Float32>(repeating: 0, count: data.count/MemoryLayout<Float32>.stride)
         _ = arr2.withUnsafeMutableBytes { data.copyBytes(to: $0) }
-        let dict = ["data":arr2]
-        guard let pathDirectory = try? getDocumentsDirectory() else{return}
-        try? FileManager().createDirectory(at: pathDirectory, withIntermediateDirectories: true)
-        let filePath = pathDirectory.appendingPathComponent("Data.json")
+        
+        var arr_int = arr2.map { (x) -> Int16 in
+            return Int16(lround(Double(x) * 1000))
+        }
+        
+        var dict = ["data":arr_int]
+        var dataPath = URL(fileURLWithPath: path+"/data/")
+        try? FileManager().createDirectory(at: dataPath, withIntermediateDirectories: true)
+        dataPath = dataPath.appendingPathComponent("data\(picNum).json")
         
         if JSONSerialization.isValidJSONObject(dict) { // True
             do {
                 let rawData = try JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted)
-                try rawData.write(to: filePath, options: .atomic)
-                //try rawData.writeToFile("newdata.json", options: .DataWritingAtomic)
-
-                //var jsonData = NSData(contentsOfFile: "newdata.json")
-                //var jsonDict = try JSONSerialization.JSONObjectWithData(jsonData!, options: .MutableContainers)
-                // -> ["stringValue": "JSON", "arrayValue": [0, 1, 2, 3, 4, 5], "numericalValue": 1]
-
+                try rawData.write(to: dataPath, options: .atomic)
             } catch {
                 print("Error: \(error)")
             }
@@ -209,6 +291,7 @@ class ViewController: UIViewController, AVCaptureFileOutputRecordingDelegate, AV
         // Accessible values : (width-1) * (height-1) = 767 * 575
 
         //let distanceAtXYPoint = floatBuffer[Int(x * y)]
+        picNum += 1
     }
     
     func readBuffer(pixelBuffer:CVPixelBuffer) -> NSData{

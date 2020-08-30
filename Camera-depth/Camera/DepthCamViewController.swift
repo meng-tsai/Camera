@@ -75,10 +75,28 @@ class DepthCamViewController: UIViewController {
 extension DepthCamViewController : AVCapturePhotoCaptureDelegate {
 
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-        print(photo.depthData)
+        print(photo.depthData?.cameraCalibrationData?.intrinsicMatrix)
         guard let imageData = photo.fileDataRepresentation() else {
             fatalError("imageData No available")
         }
+        
+        let depthData = (photo.depthData! as AVDepthData).converting(toDepthDataType: kCVPixelFormatType_DepthFloat32)
+        let depthDataMap = depthData.depthDataMap //AVDepthData -> CVPixelBuffer
+
+        //## Data Analysis ##
+
+        // Useful data
+        let width = CVPixelBufferGetWidth(depthDataMap) //768 on an iPhone 7+
+        let height = CVPixelBufferGetHeight(depthDataMap) //576 on an iPhone 7+
+        CVPixelBufferLockBaseAddress(depthDataMap, CVPixelBufferLockFlags(rawValue: 0))
+
+        // Convert the base address to a safe pointer of the appropriate type
+        let floatBuffer = unsafeBitCast(CVPixelBufferGetBaseAddress(depthDataMap), to: UnsafeMutablePointer<Float32>.self)
+
+        // Read the data (returns value of type Float)
+        // Accessible values : (width-1) * (height-1) = 767 * 575
+
+        let distanceAtXYPoint = floatBuffer[Int(0 * 0)]
         
         let capturedImage = UIImage.init(data: imageData , scale: 1.0)
         if let image = capturedImage {
